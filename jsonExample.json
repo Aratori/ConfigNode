@@ -1,0 +1,21 @@
+{
+	"contents": [
+    {
+      "productID": "34",
+      "productName": "Супер товар",
+      "quantity": "1"
+    },
+    {
+      "productID": "56",
+      "productName": "Чудо товар",
+      "quantity": "3"
+    }
+  ],
+  "firstName": "Иван",
+   "lastName": "Иванов",
+   "address": {
+       "streetAddress": "Московское ш., 101, кв.101",
+       "city": "Ленинград",
+       "postalCode": "101101"
+   }
+}
