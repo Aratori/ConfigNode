@@ -15,7 +15,7 @@
    "lastName": "Иванов",
    "address": {
        "streetAddress": "Московское ш., 101, кв.101",
-       "city": "Ленинград",
+       "city": {"Ленинград":{"libs":"open"},
        "postalCode": "101101"
    }
 }

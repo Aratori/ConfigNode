@@ -1,3 +1,4 @@
+/*Comments*/
 #ifndef CONFIG_H_
 #define CONFIG_H_
 #include <sstream>
@@ -5,21 +6,18 @@
 #include <fstream>
 #include <string.h>
 #include <stdio.h>
+#include <tinyxml.h>
 #include "ConfigNodeBase.cpp"
 #include <memory>
 #include <map>
 #include <vector>
+/* Place to put all of my definitions etc. */
 #endif
-#include "jsoncpp/json/json.h"
 
-
-typedef std::shared_ptr<std::multimap<ConfigNode*,ConfigNode*> > ConfigNodeMap;
-typedef std::pair<std::string, std::string>	strPair;
-
-class ConfigNodeJson : public ConfigNodeBase
+class ConfigNodeXml : public ConfigNodeBase
 {
 	public:
-		ConfigNodeJson(): ConfigNodeBase(){};
+		ConfigNodeXml(): ConfigNodeBase(){};
 		/**
 		 * Reading XML or JSON file into our config structure.
 		 * @param filename path to the file.
@@ -28,6 +26,6 @@ class ConfigNodeJson : public ConfigNodeBase
 		bool load(const std::string& filename);
 
 	private:
-		void    nextNode(const Json::Value &root, ConfigNode* parentNode);
+		void    nextNode(TiXmlElement *parentElem, ConfigNode *parentNode);
 		//ConfigNode*	top;
 };
