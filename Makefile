@@ -9,10 +9,10 @@ test: test.o ConfigNode*.o
 test.o: test.cpp ConfigNode*.h ConfigNode*.cpp
 	g++ $(CFLAGS) -c test.cpp
 
-ConfigNodeJson.o: ConfigNode*.h ConfigNode*.cpp
+ConfigNodeJson.o: ConfigNodeBase.h ConfigNodeBase.cpp ConfigNodeJson.h ConfigNodeJson.cpp
 	g++ $(CFLAGS) -c ConfigNodeJson.cpp
 	
-ConfigNodeXml.o: ConfigNode*.h ConfigNode*.cpp
+ConfigNodeXml.o: ConfigNodeBase.h ConfigNodeBase.cpp ConfigNodeXml.h ConfigNodeXml.cpp
 	g++ $(CFLAGS) -c ConfigNodeXml.cpp
 	
 ConfigNodeBase.o: ConfigNodeBase.h ConfigNodeBase.cpp
