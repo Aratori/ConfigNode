@@ -1,9 +1,4 @@
 #include "ConfigNodeJson.h"
-#include <string>
-
-
-typedef	std::pair<ConfigNode*, ConfigNode*> nodePair;
-typedef	std::pair <std::multimap<ConfigNode*,ConfigNode*>::iterator, std::multimap<ConfigNode*,ConfigNode*>::iterator> itrPair;
 
 
 /**
@@ -27,7 +22,7 @@ bool ConfigNodeJson::load(const std::string &filename) {
 	return	tog;
 }
 
-void    ConfigNodeJson::nextNode(const Json::Value &root, ConfigNode* parentNode) 
+void    ConfigNodeJson::nextNode(const Json::Value &root, ConfigNode parentNode) 
 {
 	//if object with attributes and/or other tags
 	Json::Value::Members	members;
@@ -38,13 +33,13 @@ void    ConfigNodeJson::nextNode(const Json::Value &root, ConfigNode* parentNode
 		
 	for(int i = 0; itr != root.end(); itr++, i++)
 	{
-		ConfigNodeTag*	tag;
+		ConfigNodeTag	tag;
 		Json::Value	childValue;
-		ConfigNode*	child;
+		ConfigNode	child;
 		
 		childValue	=	*itr;
 			
-		if(!childValue.size() && (tag = dynamic_cast<ConfigNodeTag*>(parentNode)) != 0)	//if attribute
+		if(!childValue.size() && (tag = dynamic_cast<ConfigNodeTag>(parentNode)) != 0)	//if attribute
 		{
 			(tag->attribs).insert(strPair(members[i], (*itr).asString()));
 			continue;

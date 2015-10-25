@@ -1,10 +1,11 @@
 <parent>
-	<child attr="ds">
-		<superchild attr1="d1" attr2="d2">
-			somevalue;
-		</superchild>
-	</child>
-	<otherchild>
-		on
-	</otherchild>
+ <child>
+  somevalue
+ </child>
+ <otherchild attr="someattr">
+  <innerchild>
+   innerchildvalue
+  </innerchild>
+ </otherchild>
 </parent>
+

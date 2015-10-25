@@ -1,7 +1,14 @@
 #include "ConfigNodeXml.h"
-//typedef std::shared_ptr<std::multimap<ConfigNode*,ConfigNode*> > ConfigNodeMap;
 
-TiXmlElement*	tinyNode;	
+/*
+ * endif +
+ * шаблонные функции +
+ * strtok на substr +
+ * h-ники +
+ * ConfigNode* 
+ * findNode/hasNode +
+ * заменить tab на space +
+ * /
 
 /**
 * Reading XML or JSON file into our config structure.
@@ -10,35 +17,38 @@ TiXmlElement*	tinyNode;
 */
 bool ConfigNodeXml::load(const std::string &filename) {
     TiXmlDocument conf(filename);
+    TiXmlElement*	node;
     bool tog;
 
 	tog	=	conf.LoadFile();
 	
-    tinyNode = conf.FirstChildElement();
-
-    nextNode(tinyNode, top);
+    node = conf.FirstChildElement();
+	
+    nextNode(node, top);
     
 	return tog;
 }
-void    ConfigNodeXml::nextNode(TiXmlElement *parentElem, ConfigNode *parentNode) {
+
+
+void    ConfigNodeXml::nextNode(TiXmlElement *parentElem, ConfigNode parentNode) {
 	TiXmlNode*  node    =   parentElem->FirstChild();
 	unsigned int type = node->Type();
 	TiXmlElement*	elem;
 	TiXmlText*	value;
-	ConfigNodeTag* child;
-	ConfigNodeValue*	childValue;
+	ConfigNodeTag child;
+	ConfigNodeValue	childValue;
 	
 	while(node != NULL) {
 		if(type == 1)
 		{
-				elem = node->ToElement();
-				child = dynamic_cast<ConfigNodeTag*>(setNode(parentNode, elem->ValueStr(), true));
+			elem = node->ToElement();
+			child = (ConfigNodeTag)setNode(parentNode, elem->ValueStr(),true);
 		}
 		else
 		{
-			value	=	node->ToText();
+			value =	node->ToText();
 			setNode(parentNode, value->ValueStr(), false);
-			node 	= 	node->NextSiblingElement();
+			node = node->NextSiblingElement();
 			continue;
 		}
              
@@ -50,10 +60,7 @@ void    ConfigNodeXml::nextNode(TiXmlElement *parentElem, ConfigNode *parentNode
        }
              
        if (!node->NoChildren())//если нет потомков
-		nextNode(node->ToElement(), dynamic_cast<ConfigNode*>(child));
-           node = node->NextSiblingElement();
+			nextNode(node->ToElement(), (ConfigNode)child);
+       node = node->NextSiblingElement();
 	}
 }
-
-
-

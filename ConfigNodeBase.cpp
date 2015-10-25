@@ -1,14 +1,8 @@
 #include "ConfigNodeBase.h"
-#include <string>
-
-
-typedef	std::pair<ConfigNode*, ConfigNode*> nodePair;
-typedef	std::pair <std::multimap<ConfigNode*,ConfigNode*>::iterator, std::multimap<ConfigNode*,ConfigNode*>::iterator> itrPair;
-
 
 ConfigNodeBase::ConfigNodeBase() {
-	top = new ConfigNode;
-	top->children.reset(new std::multimap<ConfigNode*, ConfigNode*>);	//set multimap
+	top = new ConfigNodeData();
+	top->children.reset(new std::multimap<ConfigNode, ConfigNode>);	//set multimap
 }
 
 ConfigNodeBase::~ConfigNodeBase() {
@@ -16,63 +10,62 @@ ConfigNodeBase::~ConfigNodeBase() {
 }
 
 
-ConfigNode*	ConfigNodeBase::setNode(ConfigNode*	parent, std::string val, bool tag/*set tag/value node*/)
+ConfigNode	ConfigNodeBase::setNode(ConfigNode	parent, std::string val, bool tag/*set tag/value node*/)
 {
-	ConfigNode*	ret;
+	ConfigNode child;
+	
+	if(tag)
+		child = new ConfigNodeTagData();
+	else
+		child = new ConfigNodeValueData();
+	
+	child->parent =	parent;
+	child->children	= parent->children;
+	parent->children->insert(nodePair(parent, (ConfigNode)child));
 	
 	if(tag)
 	{
-		ConfigNodeTag* child	=	new ConfigNodeTag();
-		child->parent	=	parent;
-		child->children	=	parent->children;
-		parent->children->insert(nodePair(parent, (ConfigNode*)child));
-		child->name		=	val;
-		ret	=		child;
+		ConfigNodeTag childTag = (ConfigNodeTag)child;
+		childTag->name = val;
 	}
 	else
 	{
-		ConfigNodeValue* child	=	new ConfigNodeValue();
-		child->parent	=	parent;
-		child->children	=	parent->children;
-		parent->children->insert(nodePair(parent, (ConfigNode*)child));
-		child->value	=	val;
-		ret	=	child;
-	}		
+		ConfigNodeValue childValue = (ConfigNodeValue)child;
+		childValue->value = val;
+	}	
 		
-	return ret;
+	return child;
 }
 
 
 void ConfigNodeBase::dump(std::stringstream& target, uint32_t indent) const
 {
-	static ConfigNode*	stepPointer		=	top;
-	if(stepPointer == 0)
-		stepPointer = top;
-    typename std::multimap<ConfigNode*,ConfigNode*>::iterator it,it_2;
+	static ConfigNode stepPointer;
+	if(indent == 0)
+		stepPointer	=	top;
     std::string indentStr(indent, ' ');
-    ConfigNodeTag* tagPointer;
-    ConfigNodeValue* valuePointer;
+    ConfigNodeTag tagPointer;
+    ConfigNodeValue valuePointer;
 
     itrPair ret;
     ret = (stepPointer->children)->equal_range(stepPointer);//get node children
 
-
-    for(std::multimap<ConfigNode*, ConfigNode*>::iterator it = ret.first; it != ret.second; ++it)
+    for(auto it = ret.first; it != ret.second; ++it)
     {
-        ConfigNode* currentNode = it->second;
+        ConfigNode currentNode = it->second;
 
         //print node
         target<<indentStr;//print indent
-        if((tagPointer = dynamic_cast<ConfigNodeTag *>(currentNode)) != 0)
+        if((tagPointer = dynamic_cast<ConfigNodeTag>(currentNode)) != 0)
         {
             target<<"Element{"<<tagPointer->name;
             //print attributes
-            std::multimap<std::string, std::string>::iterator   mapIt = tagPointer->attribs.begin();
+            auto   mapIt = tagPointer->attribs.begin();
             for(; mapIt != tagPointer->attribs.end(); mapIt++)
                 target<<"# "<<mapIt->first<<":"<<mapIt->second;
             target<<"}";
         }
-        else if((valuePointer = dynamic_cast<ConfigNodeValue *>(currentNode)) != 0)
+        else if((valuePointer = dynamic_cast<ConfigNodeValue>(currentNode)) != 0)
                 target<<"Value{"<<valuePointer->value<<"}";
         target<<std::endl;
 
@@ -80,11 +73,7 @@ void ConfigNodeBase::dump(std::stringstream& target, uint32_t indent) const
         stepPointer = currentNode;
         dump(target, indent+=2);
         stepPointer = currentNode->parent;
-
-
-    }
-
-    stepPointer = 0	;
+    }	
 }
 
 std::string	ConfigNodeBase::toString() const
@@ -101,11 +90,11 @@ ConfigNodeMap	ConfigNodeBase::getChildren()
 	return top->children;
 }
 
-bool	ConfigNodeBase::compareNodes(ConfigNode* node,const std::string& name,const std::vector<strPair>& attr) const
+bool	ConfigNodeBase::compareNodes(ConfigNode node,const std::string& name,const std::vector<strPair>& attr) const
 {
-	ConfigNodeTag* tagPointer;
+	ConfigNodeTag tagPointer;
 	
-	if((tagPointer = dynamic_cast<ConfigNodeTag *>(node)) == 0 )//if wrong type
+	if((tagPointer = dynamic_cast<ConfigNodeTag>(node)) == 0 )//if wrong type
 		return false;
 	
 	if((tagPointer->name).compare(name) != 0)//if wrong name
@@ -113,7 +102,7 @@ bool	ConfigNodeBase::compareNodes(ConfigNode* node,const std::string& name,const
 		
 	//check attributes
 	if(attr.size() != 0){
-		std::multimap<std::string, std::string>::iterator   mapIt = tagPointer->attribs.begin();
+		auto   mapIt = tagPointer->attribs.begin();
 		for(int i = 0; i <  attr.size();i++, mapIt++)
 		{	
 			if((mapIt->first).compare(attr[i].first) != 0)
@@ -129,54 +118,68 @@ bool	ConfigNodeBase::compareNodes(ConfigNode* node,const std::string& name,const
 bool	ConfigNodeBase::parsePath(const std::string& path, std::string& tagName, std::vector<strPair>& attributes, int deep) const
 {
     //get name, attributes and attributes's value for current deep level
-	char*	c_path	=	strdup(path.c_str());
-	char*	tag;
+	std::string	c_path	=	path;
+	std::string	tag;
 	bool	end	=	false;
 	
 	//get str with tagname, attributes, attributes value
-	tag = strtok(c_path, ".");
+	int startPos = 0;
+	int endPos	= c_path.find('.', startPos);
+	tag = c_path.substr(startPos, endPos);
+	
 	for(int i = 0; i < deep; i++)
-		tag = strtok(NULL, ".");
+	{
+		startPos	+=	endPos + 1;
+		endPos		=	c_path.find('.', startPos) - startPos;
+		tag = c_path.substr(startPos, endPos);
 		
-		
-	if(strtok(NULL, ".") == NULL)
+	}
+	if(c_path.find('.', startPos) == std::string::npos)
 		end = true;
 		
 	//get tagname
-	tagName.assign(strtok(tag,"#"));
-	c_path	=	strtok(NULL, "#");			//get str with attributes
+	if(tag.find('#') < tag.find('.'))
+		endPos = tag.find('#');
+	else
+		endPos = tag.find('.');
+		
+	tagName = tag.substr(0, endPos);
+	startPos = 0;
 	
 	
 	//get attributes
-	c_path = strtok(c_path, ",:");
-	
-	while(c_path != NULL)
-	{
-		std::string attrName(c_path);
-		std::string attrValue(strtok(NULL, ",:"));
-		attributes.push_back(std::pair<std::string, std::string>(attrName, attrValue));
-		c_path	=	strtok(NULL, ",:");
-	}	
+	if(tag.find(':') != std::string::npos)
+		do{
+			startPos	+=	endPos + 1;
+			endPos	=	tag.find(':', startPos) - startPos;
+			std::string attrName = tag.substr(startPos, endPos);
+			
+			startPos += endPos + 1;
+			endPos = tag.find(',', startPos) - startPos;
+			std::string attrValue = tag.substr(startPos,endPos);
+			
+			attributes.push_back(std::pair<std::string, std::string>(attrName, attrValue));	
+		}while(tag.find(':',endPos) != std::string::npos);
 	
 	return end;
 }
 
-ConfigNode		ConfigNodeBase::findChildNode(const std::string& node, const std::string& attr, const std::string& value) const
+ConfigNode	ConfigNodeBase::findChildNode(const std::string& node, const std::string& attr, const std::string& value) const
 {
-	static ConfigNode* stepPointer = top;
-	static ConfigNode	targetPointer	=	*top;
-    ConfigNodeTag* tagPointer;
+	static ConfigNode stepPointer = top;
+	static ConfigNode targetPointer	= top;
+    ConfigNodeTag tagPointer;
     
     itrPair ret;
     ret = (stepPointer->children)->equal_range(stepPointer);//get node children
     
-    for(std::multimap<ConfigNode*, ConfigNode*>::iterator it = ret.first; it != ret.second; ++it)
+    for(auto it = ret.first; it != ret.second; ++it)
     {		
-		ConfigNode* child = it->second;
+		ConfigNode child = it->second;
 		std::vector<strPair>	attrs;
 		attrs.push_back(std::pair<std::string, std::string>(attr, value));
 		if(this->compareNodes(child, node, attrs) == true)	
-			targetPointer = *child;
+			targetPointer = child;
 			
 		stepPointer = child;
 		targetPointer = findChildNode(node, attr, value);
@@ -212,10 +215,9 @@ ConfigNode		ConfigNodeBase::findChildNode(const std::string& node, const std::st
 */
 ConfigNode ConfigNodeBase::findNode(const std::string& path) const
 {
-	static ConfigNode* stepPointer = top;
+	static ConfigNode stepPointer = top;
 	static unsigned int 	deep_counter	=	0;
-	typename std::multimap<ConfigNode*,ConfigNode*>::iterator it;
-    ConfigNode		targetPointer;
+    ConfigNode		targetPointer = nullptr;
     
     std::string tagName;
     std::vector<strPair> attributes;
@@ -224,19 +226,20 @@ ConfigNode ConfigNodeBase::findNode(const std::string& path) const
     itrPair ret;
     ret = (stepPointer->children)->equal_range(stepPointer);															//get node children
     
-    for(std::multimap<ConfigNode*, ConfigNode*>::iterator it = ret.first; it != ret.second; ++it)
+    for(auto it = ret.first; it != ret.second; ++it)
     {
 		if(compareNodes(it->second, tagName, attributes) && end)
-			return *it->second;
+			return it->second;
 		
 		stepPointer = it->second;
 		deep_counter++;
 		targetPointer = findNode(path);
-		if(targetPointer.parent != NULL)
+		if(targetPointer != nullptr)
 			return targetPointer;
 		deep_counter--;
 		stepPointer = (it->second)->parent;
 	}
+	
 	
 	return targetPointer;
 }
@@ -249,33 +252,7 @@ ConfigNode ConfigNodeBase::findNode(const std::string& path) const
 */
 bool ConfigNodeBase::hasNode(const std::string& path) const
 {	
-	static ConfigNode* stepPointer	=	top;	
-	static unsigned int 	deep_counter	=	0;
-    bool			has		=	false;
-    
-    std::string tagName;
-    std::vector<strPair> attributes;
-    bool end	=	parsePath(path, tagName, attributes, deep_counter);
-			
-    itrPair ret;
-    ret = (stepPointer->children)->equal_range(stepPointer);															//get node children
-    
-    for(std::multimap<ConfigNode*, ConfigNode*>::iterator it = ret.first; it != ret.second; ++it)
-    {	
-		if(!compareNodes(it->second, tagName, attributes))
-			continue;
-			
-		if(end)
-			return end;
-		
-		stepPointer = it->second;
-		deep_counter++;
-		has = hasNode(path);
-		deep_counter--;
-		stepPointer = (it->second)->parent;
-	}
-
-	return has;
+	return findNode(path) == nullptr;
 }
 
 /**
@@ -288,71 +265,8 @@ bool ConfigNodeBase::hasNode(const std::string& path) const
 ConfigNode ConfigNodeBase::getNode(const std::string& path) const
 {
 	ConfigNode	tag	=	findNode(path);
-	if(tag.parent != NULL)
+	if(tag)
 		return findNode(path);		//поставить здесь проверку на исключения
 	else
 		throw	std::runtime_error("Node not found");
 }
-
-/**
- * Return attribute value or default value (if attribute does not exist).
- * Searches nodes hierarchy if complex path is supplied.
- * @param path node/attribute search path.
- * @param def default value.
- * @return attribute value or default value.
- * "parent.child#attr1:val.superchild"
-*/
-template <typename Y>
-Y ConfigNodeBase::getAttr(const std::string& path, Y def) const
-{
-	static ConfigNode*	stepPointer		=	top;
-	static unsigned int 	deep_counter	=	0;
-    Y				targetAttr = def;
-    
-    std::string tagName;
-    std::vector<strPair> attributes;
-    bool end	=	parsePath(path, tagName, attributes, deep_counter);
-    
-    itrPair ret;
-    ret = (stepPointer->children)->equal_range(stepPointer);																//get node children
-    
-    for(std::multimap<ConfigNode*, ConfigNode*>::iterator it = ret.first; it != ret.second; ++it)
-    {	
-		if(compareNodes(it->second, tagName, attributes))
-			if(end)
-			{
-				ConfigNodeTag*	tagPointer	=	dynamic_cast<ConfigNodeTag*>(it->second);
-				if(tagPointer->attribs.size())
-					return (Y)(*tagPointer->attribs.begin());
-			}
-		
-		stepPointer = it->second;
-		deep_counter++;
-		targetAttr = getAttr(path, def);
-		deep_counter--;
-		stepPointer = (it->second)->parent;
-	}
-
-	
-	return targetAttr;
-}
-
-/**
- * Return attribute value.
- * Searches nodes hierarchy if complex path is supplied.
- * Throws exception if attribute does not exist.
- * @param path node/attribute search path.
- * @return attribute value.
-*/
-template <typename Y>
-Y ConfigNodeBase::getAttr(const std::string& path) const
-{
-	Y attr 	=	getAttr<Y>(path, 0);
-	if(attr != 0)
-		return NULL;
-	else
-		throw	std::runtime_error("Attribute not found");
-}	
-
-
-
