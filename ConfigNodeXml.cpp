@@ -18,6 +18,7 @@
 bool ConfigNodeXml::load(const std::string &filename) {
     TiXmlDocument conf(filename);
     TiXmlElement*	node;
+    
     bool tog;
 
 	tog	=	conf.LoadFile();

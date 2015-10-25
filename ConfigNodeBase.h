@@ -80,7 +80,6 @@ class ConfigNodeBase
 		 */
 		ConfigNode findChildNode(const std::string& node,
 				const std::string& attr = "", const std::string& value = "") const;
-
 		/**
 		 * Lookup request function. Searches in the existing node tree and
 		 * return the resulting node.
