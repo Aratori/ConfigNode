@@ -1,15 +1,5 @@
 #include "ConfigNodeXml.h"
 
-/*
- * endif +
- * шаблонные функции +
- * strtok на substr +
- * h-ники +
- * ConfigNode* 
- * findNode/hasNode +
- * заменить tab на space +
- * /
-
 /**
 * Reading XML or JSON file into our config structure.
 * @param filename path to the file.
