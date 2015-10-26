@@ -3,10 +3,10 @@ CFLAGS = -std=c++11 -g
 
 all: test
 
-test: test.o ConfigNode*.o
+test: test.o ConfigNodeJson.o ConfigNodeXml.o ConfigNodeBase.o
 	g++ $(CFLAGS) test.o ConfigNodeJson.o ConfigNodeXml.o ConfigNodeBase.o -o	Test $(CLIBS)
 	
-test.o: test.cpp ConfigNode*.h ConfigNode*.cpp
+test.o: test.cpp ConfigNodeJson.h ConfigNodeJson.cpp ConfigNodeXml.h ConfigNodeXml.cpp ConfigNodeBase.h ConfigNodeBase.cpp
 	g++ $(CFLAGS) -c test.cpp
 
 ConfigNodeJson.o: ConfigNodeBase.h ConfigNodeBase.cpp ConfigNodeJson.h ConfigNodeJson.cpp
