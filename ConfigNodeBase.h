@@ -9,10 +9,11 @@
 #include <memory>
 #include <map>
 #include <vector>
+#include <fstream>
 
 struct	ConfigNodeData;
 
-typedef	ConfigNodeData* ConfigNode;
+typedef	std::shared_ptr<ConfigNodeData> ConfigNode;
 typedef std::shared_ptr<std::multimap<ConfigNode,ConfigNode> > ConfigNodeMap;
 typedef std::pair<std::string, std::string>	strPair;
 typedef	std::pair<ConfigNode, ConfigNode> nodePair;
@@ -30,21 +31,34 @@ struct ConfigNodeTagData : ConfigNodeData
 {
 	std::string name;
 	std::map<std::string, std::string> attribs;
+	friend std::ostream& operator<<(std::ostream& s, const ConfigNodeTagData& tag)
+	{
+		s << tag.name;
+		
+        auto   mapIt = tag.attribs.begin();
+        for(; mapIt != tag.attribs.end(); mapIt++)
+             s << "#" << mapIt->first << ":" << mapIt->second;
+		return s;
+	}
 };
 struct	ConfigNodeValueData : ConfigNodeData
 {
 	std::string	value;
+	friend std::ostream& operator<<(std::ostream& s, const ConfigNodeValueData& data)
+	{
+		s << data.value;
+		return s;
+	}
 };
 
-typedef ConfigNodeTagData* ConfigNodeTag;
-typedef ConfigNodeValueData* ConfigNodeValue;
+typedef std::shared_ptr<ConfigNodeTagData> ConfigNodeTag;
+typedef std::shared_ptr<ConfigNodeValueData> ConfigNodeValue;
 
 
 class ConfigNodeBase
 {
 	public:
 		ConfigNodeBase();
-		~ConfigNodeBase();
 		/**
 		 * Reading XML or JSON file into our config structure.
 		 * @param filename path to the file.
@@ -136,6 +150,8 @@ class ConfigNodeBase
 		{
 			static ConfigNode	stepPointer		=	top;
 			static unsigned int 	deep_counter	=	0;
+			if(deep_counter == 0)
+				stepPointer = top;
 			Y				targetAttr = def;
 			
 			std::string tagName;
@@ -150,11 +166,11 @@ class ConfigNodeBase
 				if(compareNodes(it->second, tagName, attributes))
 					if(end)
 					{
-						ConfigNodeTag	tagPointer	=	dynamic_cast<ConfigNodeTag>(it->second);
+						ConfigNodeTag	tagPointer((ConfigNodeTagData*)(it->second).get());
 						if(tagPointer->attribs.size())
 						{
 							Y attr	=	(Y)((*tagPointer->attribs.begin()).second);
-							return attr;
+							return  attr;
 						}
 					}
 				
@@ -178,16 +194,19 @@ class ConfigNodeBase
 		template <typename Y>
 		Y getAttr(const std::string& path) const
 		{
-			Y attr 	=	getAttr<Y>(path, 0);
-			if(attr != 0)
-				return NULL;
+			Y attr 	=	getAttr<Y>(path, "");
+			if(attr != "")
+				return attr;
 			else
 				throw	std::runtime_error("Attribute not found");
 		}	
+		
+		bool operator==(const ConfigNodeBase& ex);
 	protected:
-		bool	parsePath(const std::string& path, std::string& tagName, std::vector<strPair>& attributes, int deep) const;
+		bool		parsePath(const std::string& path, std::string& tagName, std::vector<strPair>& attributes, int deep) const;
 		ConfigNode	setNode(ConfigNode parent, std::string val, bool tog);//set tag/value config nodes
-		bool	compareNodes(ConfigNode node,const std::string& name, const std::vector<strPair>& attr) const;
+		bool		compareNodes(ConfigNode node,const std::string& name, const std::vector<strPair>& attr) const;
+		bool 		compareNodes(const ConfigNode nodeR,const ConfigNode nodeL) const;
 		
 		ConfigNode	top;
 };

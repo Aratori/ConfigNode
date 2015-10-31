@@ -27,13 +27,13 @@ void    ConfigNodeXml::nextNode(TiXmlElement *parentElem, ConfigNode parentNode)
 	TiXmlElement*	elem;
 	TiXmlText*	value;
 	ConfigNodeTag child;
-	ConfigNodeValue	childValue;
 	
 	while(node != NULL) {
+		
 		if(type == 1)
 		{
 			elem = node->ToElement();
-			child = (ConfigNodeTag)setNode(parentNode, elem->ValueStr(),true);
+			child.reset((ConfigNodeTagData*)setNode(parentNode, elem->ValueStr(),true).get());
 		}
 		else
 		{
@@ -50,7 +50,7 @@ void    ConfigNodeXml::nextNode(TiXmlElement *parentElem, ConfigNode parentNode)
              attr = attr->Next();
        }
              
-       if (!node->NoChildren())//если нет потомков
+       if (!node->NoChildren())//если есть потомки
 			nextNode(node->ToElement(), (ConfigNode)child);
        node = node->NextSiblingElement();
 	}

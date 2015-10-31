@@ -1,38 +1,36 @@
 #include "ConfigNodeBase.h"
 
-ConfigNodeBase::ConfigNodeBase() {
-	top = new ConfigNodeData();
-	top->children.reset(new std::multimap<ConfigNode, ConfigNode>);	//set multimap
-}
-
-ConfigNodeBase::~ConfigNodeBase() {
-    delete top;
+ConfigNodeBase::ConfigNodeBase(): top(new ConfigNodeData()){
+	top->children.reset(new std::multimap<ConfigNode, ConfigNode>);	
+	//в самой структуре инициализируется только shared_ptr, не multimap, поэтому надо отдельно заносить в него multimap
+	//multimap в shared_ptr нужен для того, чтобы передавать его в дочерние узлы
 }
 
 
-ConfigNode	ConfigNodeBase::setNode(ConfigNode	parent, std::string val, bool tag/*set tag/value node*/)
+ConfigNode	ConfigNodeBase::setNode(ConfigNode	parent, std::string val, bool tog/*set tag/value node*/)
 {
-	ConfigNode child;
+	ConfigNodeTagData* tag;
+	ConfigNodeValueData* value;
+	ConfigNodeData* data;
 	
-	if(tag)
-		child = new ConfigNodeTagData();
-	else
-		child = new ConfigNodeValueData();
-	
-	child->parent =	parent;
-	child->children	= parent->children;
-	parent->children->insert(nodePair(parent, (ConfigNode)child));
-	
-	if(tag)
+	if(tog)
 	{
-		ConfigNodeTag childTag = (ConfigNodeTag)child;
-		childTag->name = val;
+		tag = new ConfigNodeTagData();
+		tag->name = val;
+		data = tag;
 	}
 	else
 	{
-		ConfigNodeValue childValue = (ConfigNodeValue)child;
-		childValue->value = val;
-	}	
+		value = new ConfigNodeValueData();
+		value->value = val;
+		data = value;
+	}
+	ConfigNode	child(data);
+	
+	child->parent =	parent;
+	child->children	= parent->children;
+	parent->children->insert(nodePair(parent,child));
+	
 		
 	return child;
 }
@@ -40,33 +38,29 @@ ConfigNode	ConfigNodeBase::setNode(ConfigNode	parent, std::string val, bool tag/
 
 void ConfigNodeBase::dump(std::stringstream& target, uint32_t indent) const
 {
-	static ConfigNode stepPointer;
+	static ConfigNode stepPointer = top;
 	if(indent == 0)
-		stepPointer	=	top;
+		stepPointer = top;
     std::string indentStr(indent, ' ');
-    ConfigNodeTag tagPointer;
-    ConfigNodeValue valuePointer;
-
+   
     itrPair ret;
     ret = (stepPointer->children)->equal_range(stepPointer);//get node children
 
     for(auto it = ret.first; it != ret.second; ++it)
     {
         ConfigNode currentNode = it->second;
-
+		ConfigNodeTag tagPointer;
+		ConfigNodeValue valuePointer;
+		
         //print node
         target<<indentStr;//print indent
-        if((tagPointer = dynamic_cast<ConfigNodeTag>(currentNode)) != 0)
+        if((tagPointer = std::dynamic_pointer_cast<ConfigNodeTagData>(currentNode)) != 0)
         {
-            target<<"Element{"<<tagPointer->name;
-            //print attributes
-            auto   mapIt = tagPointer->attribs.begin();
-            for(; mapIt != tagPointer->attribs.end(); mapIt++)
-                target<<"# "<<mapIt->first<<":"<<mapIt->second;
-            target<<"}";
+			target<<(*tagPointer);
         }
-        else if((valuePointer = dynamic_cast<ConfigNodeValue>(currentNode)) != 0)
-                target<<"Value{"<<valuePointer->value<<"}";
+        else if((valuePointer = std::dynamic_pointer_cast<ConfigNodeValueData>(currentNode)) != 0)
+                target<<*valuePointer;                
+                
         target<<std::endl;
 
         //pass children
@@ -94,7 +88,7 @@ bool	ConfigNodeBase::compareNodes(ConfigNode node,const std::string& name,const 
 {
 	ConfigNodeTag tagPointer;
 	
-	if((tagPointer = dynamic_cast<ConfigNodeTag>(node)) == 0 )//if wrong type
+	if((tagPointer = std::dynamic_pointer_cast<ConfigNodeTagData>(node)) == 0 )//if wrong type
 		return false;
 	
 	if((tagPointer->name).compare(name) != 0)//if wrong name
@@ -113,6 +107,53 @@ bool	ConfigNodeBase::compareNodes(ConfigNode node,const std::string& name,const 
 	}
 	
 	return true;
+}
+
+bool ConfigNodeBase::compareNodes(const ConfigNode parentR, const ConfigNode parentL) const
+{
+	auto retR = (parentR->children)->equal_range(parentR);
+	auto retL = (parentL->children)->equal_range(parentL);
+	bool comp = true;
+	bool type = true;
+	ConfigNodeTag	tagR, tagL;
+	ConfigNodeValue	valueR, valueL;
+	
+	for(auto itrR = retR.first, itrL = retL.first; itrR != retR.second; ++itrR, ++itrL)
+	{
+		//выявление типа данных
+		if((tagR = std::dynamic_pointer_cast<ConfigNodeTagData>(itrR->second)) != 0 && (tagL = std::dynamic_pointer_cast<ConfigNodeTagData>(itrL->second)) != 0)
+			type = true;
+		else if((valueR = std::dynamic_pointer_cast<ConfigNodeValueData>(itrR->second))!= 0 && (valueL = std::dynamic_pointer_cast<ConfigNodeValueData>(itrL->second)) != 0)
+				type = false;
+			 else
+				return false;
+				
+		//сравнение нодов
+		if(type)
+		{
+			if((tagR->name).compare(tagL->name) != 0 || (tagR->attribs).size() != (tagR->attribs).size())
+				return false;
+			
+			auto attrIteratorR = (tagR->attribs).begin();
+			auto attrIteratorL = (tagL->attribs).begin();
+			
+			for(; attrIteratorR != (tagR->attribs).end(); attrIteratorR++, attrIteratorL++)
+			{
+				if((attrIteratorR->first).compare(attrIteratorL->first) != 0)
+					return false;
+				
+				if((attrIteratorR->second).compare(attrIteratorL->second) != 0)
+					return false;
+			}
+		}
+		else if((valueR->value).compare(valueL->value) != 0)
+				return false;
+		
+		if(type)	
+			comp = compareNodes(tagR, tagL);
+	}
+	
+	return comp;
 }
 
 bool	ConfigNodeBase::parsePath(const std::string& path, std::string& tagName, std::vector<strPair>& attributes, int deep) const
@@ -167,7 +208,9 @@ bool	ConfigNodeBase::parsePath(const std::string& path, std::string& tagName, st
 ConfigNode	ConfigNodeBase::findChildNode(const std::string& node, const std::string& attr, const std::string& value) const
 {
 	static ConfigNode stepPointer = top;
-	static ConfigNode targetPointer	= top;
+	static ConfigNode targetPointer(nullptr);
+	if(stepPointer == top)
+		targetPointer.reset();
     ConfigNodeTag tagPointer;
     
     itrPair ret;
@@ -217,7 +260,11 @@ ConfigNode ConfigNodeBase::findNode(const std::string& path) const
 {
 	static ConfigNode stepPointer = top;
 	static unsigned int 	deep_counter	=	0;
-    ConfigNode		targetPointer = nullptr;
+	static ConfigNode		targetPointer(nullptr);
+	if(stepPointer == top)
+		targetPointer.reset();
+	
+    
     
     std::string tagName;
     std::vector<strPair> attributes;
@@ -234,8 +281,6 @@ ConfigNode ConfigNodeBase::findNode(const std::string& path) const
 		stepPointer = it->second;
 		deep_counter++;
 		targetPointer = findNode(path);
-		if(targetPointer != nullptr)
-			return targetPointer;
 		deep_counter--;
 		stepPointer = (it->second)->parent;
 	}
@@ -252,7 +297,7 @@ ConfigNode ConfigNodeBase::findNode(const std::string& path) const
 */
 bool ConfigNodeBase::hasNode(const std::string& path) const
 {	
-	return findNode(path) == nullptr;
+	return findNode(path).use_count() != 0;
 }
 
 /**
@@ -269,4 +314,12 @@ ConfigNode ConfigNodeBase::getNode(const std::string& path) const
 		return findNode(path);		//поставить здесь проверку на исключения
 	else
 		throw	std::runtime_error("Node not found");
+}
+
+bool ConfigNodeBase::operator==(const ConfigNodeBase& ex)
+{
+    if((top->children)->size() != ((ex.top)->children)->size())
+		return false;
+			
+	return compareNodes(top, (ex.top));
 }

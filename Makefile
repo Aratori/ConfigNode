@@ -6,6 +6,9 @@ all: test
 test: test.o ConfigNodeJson.o ConfigNodeXml.o ConfigNodeBase.o
 	g++ $(CFLAGS) test.o ConfigNodeJson.o ConfigNodeXml.o ConfigNodeBase.o -o	Test $(CLIBS)
 	
+valgrind: test.o ConfigNodeJson.o ConfigNodeXml.o ConfigNodeBase.o
+	 valgrind --tool=memcheck --leak-check=yes  ./Test
+	
 test.o: test.cpp ConfigNodeJson.h ConfigNodeJson.cpp ConfigNodeXml.h ConfigNodeXml.cpp ConfigNodeBase.h ConfigNodeBase.cpp
 	g++ $(CFLAGS) -c test.cpp
 

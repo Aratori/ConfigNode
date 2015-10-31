@@ -1,11 +1,9 @@
 <parent>
  <child>
-  somevalue
+	 Item
  </child>
- <otherchild attr="someattr">
-  <innerchild>
-   innerchildvalue
-  </innerchild>
+ <otherchild>
+	otherchildvalue
  </otherchild>
 </parent>
 

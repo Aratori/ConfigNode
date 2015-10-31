@@ -27,19 +27,18 @@ void    ConfigNodeJson::nextNode(const Json::Value &root, ConfigNode parentNode)
 	//if object with attributes and/or other tags
 	Json::Value::Members	members;
 	Json::ValueIterator		itr		=	root.begin();
-	
+	ConfigNodeTag tag;
 	if(!root.isArray())
 		members	=	root.getMemberNames();
 		
 	for(int i = 0; itr != root.end(); itr++, i++)
 	{
-		ConfigNodeTag	tag;
 		Json::Value	childValue;
 		ConfigNode	child;
 		
 		childValue	=	*itr;
 			
-		if(!childValue.size() && (tag = dynamic_cast<ConfigNodeTag>(parentNode)) != 0)	//if attribute
+		if(!childValue.size() && (tag = std::dynamic_pointer_cast<ConfigNodeTagData>(parentNode)) != 0)	//if attribute
 		{
 			(tag->attribs).insert(strPair(members[i], (*itr).asString()));
 			continue;
@@ -50,8 +49,13 @@ void    ConfigNodeJson::nextNode(const Json::Value &root, ConfigNode parentNode)
 			child 	=	setNode(parentNode, std::string("ArrayItem"), true);
 		else
 		 	child 	=	setNode(parentNode, members[i], true);
+		 
+		std::string str;
 		if(childValue.size() == 0)
-			setNode(child, (*itr).asString(), false);
+		{
+			str = (*itr).asString();
+			setNode(child, str, false);
+		}
 		else
 			nextNode(childValue, child);
 	}
