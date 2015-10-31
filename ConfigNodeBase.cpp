@@ -1,10 +1,16 @@
 #include "ConfigNodeBase.h"
 
-ConfigNodeBase::ConfigNodeBase(): top(new ConfigNodeData()){
+ConfigNodeBase::ConfigNodeBase(): top(new ConfigNodeData())
+{
 	top->children.reset(new std::multimap<ConfigNode, ConfigNode>);	
 	//в самой структуре инициализируется только shared_ptr, не multimap, поэтому надо отдельно заносить в него multimap
 	//multimap в shared_ptr нужен для того, чтобы передавать его в дочерние узлы
 }
+
+/*ConfigNodeBase::~ConfigNodeBase()
+{
+	
+}*/
 
 
 ConfigNode	ConfigNodeBase::setNode(ConfigNode	parent, std::string val, bool tog/*set tag/value node*/)

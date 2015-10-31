@@ -9,6 +9,10 @@ using namespace std;
 
 ConfigNodeJson configJson;
 ConfigNodeXml	configXml;
+ConfigNodeJson eqConfigJsonOne;
+ConfigNodeJson eqConfigJsonTwo;
+ConfigNodeXml eqConfigXmlOne;
+ConfigNodeXml eqConfigXmlTwo;
 ConfigNodeJson eqJson;
 ConfigNode 		node;
 ConfigNodeTag 	nodeTag;
@@ -81,8 +85,7 @@ TEST(ConfigNodeTest, NegativeGetNodeTest)
 {
 	try{
 		configJson.getNode("not node");
-	}
-	catch(std::runtime_error ex)
+	}	catch(std::runtime_error ex)
 	{
 		ASSERT_TRUE(strcmp("Node not found",ex.what()) == 0);
 	}
@@ -109,8 +112,6 @@ TEST(ConfigNodeTest, ConfigCompare)
 
 TEST(ConfigNodeTest, ConfigJsonCompare)
 {
-	ConfigNodeJson eqConfigJsonOne;
-	ConfigNodeJson eqConfigJsonTwo;
 	eqConfigJsonOne.load("eqJsonExample.json");
 	eqConfigJsonTwo.load("jsonExample.json");
 	cout<<eqConfigJsonOne.toString()<<endl;
@@ -120,8 +121,6 @@ TEST(ConfigNodeTest, ConfigJsonCompare)
 
 TEST(ConfigNodeTest, ConfigXmlCompare)
 {
-	ConfigNodeXml eqConfigXmlOne;
-	ConfigNodeXml eqConfigXmlTwo;
 	eqConfigXmlOne.load("example.xml");
 	eqConfigXmlTwo.load("example.xml");
 	cout<<eqConfigXmlOne.toString()<<endl;
@@ -131,11 +130,7 @@ TEST(ConfigNodeTest, ConfigXmlCompare)
 
 TEST(ConfigNodeTest, NegativeConfigCompare)
 {
-	ConfigNodeJson eqConfigJsonOne;
-	ConfigNodeXml eqConfigXmlTwo;
-	eqConfigJsonOne.load("jsonExample.json");
-	eqConfigXmlTwo.load("example.xml");
-	cout<<eqConfigJsonOne.toString()<<endl;
+	cout<<eqConfigJsonTwo.toString()<<endl;
 	cout<<eqConfigXmlTwo.toString()<<endl;	
-	ASSERT_FALSE(eqConfigJsonOne == eqConfigXmlTwo);
+	ASSERT_FALSE(eqConfigJsonTwo == eqConfigXmlTwo);
 }
