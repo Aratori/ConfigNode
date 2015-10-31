@@ -7,11 +7,6 @@ ConfigNodeBase::ConfigNodeBase(): top(new ConfigNodeData())
 	//multimap в shared_ptr нужен для того, чтобы передавать его в дочерние узлы
 }
 
-/*ConfigNodeBase::~ConfigNodeBase()
-{
-	
-}*/
-
 
 ConfigNode	ConfigNodeBase::setNode(ConfigNode	parent, std::string val, bool tog/*set tag/value node*/)
 {
