@@ -1,6 +1,6 @@
 #ifndef CONFIGBASE_H_
 #define CONFIGBASE_H_
-#include <sstream> 
+#include <sstream>
 #include <iostream>
 #include <stdint.h>
 #include <fstream>
@@ -14,7 +14,7 @@
 struct	ConfigNodeData;
 
 typedef	std::shared_ptr<ConfigNodeData> ConfigNode;
-typedef std::shared_ptr<std::multimap<ConfigNode,ConfigNode> > ConfigNodeMap;
+typedef std::multimap<ConfigNode,ConfigNode> ConfigNodeMap;
 typedef std::pair<std::string, std::string>	strPair;
 typedef	std::pair<ConfigNode, ConfigNode> nodePair;
 typedef	std::pair <std::multimap<ConfigNode,ConfigNode>::iterator, std::multimap<ConfigNode,ConfigNode>::iterator> itrPair;
@@ -22,33 +22,33 @@ typedef	std::pair <std::multimap<ConfigNode,ConfigNode>::iterator, std::multimap
 
 struct ConfigNodeData
 {
-	ConfigNode parent;
-	ConfigNodeMap children;
-	virtual ~ConfigNodeData(){};
+    ConfigNode parent;
+    ConfigNodeMap children;
+    virtual ~ConfigNodeData() {};
 };
 
 struct ConfigNodeTagData : ConfigNodeData
 {
-	std::string name;
-	std::map<std::string, std::string> attribs;
-	friend std::ostream& operator<<(std::ostream& s, const ConfigNodeTagData& tag)
-	{
-		s << tag.name;
-		
+    std::string name;
+    std::map<std::string, std::string> attribs;
+    friend std::ostream& operator<<(std::ostream& s, const ConfigNodeTagData& tag)
+    {
+        s << tag.name;
+
         auto   mapIt = tag.attribs.begin();
         for(; mapIt != tag.attribs.end(); mapIt++)
-             s << "#" << mapIt->first << ":" << mapIt->second;
-		return s;
-	}
+            s << "#" << mapIt->first << ":" << mapIt->second;
+        return s;
+    }
 };
 struct	ConfigNodeValueData : ConfigNodeData
 {
-	std::string	value;
-	friend std::ostream& operator<<(std::ostream& s, const ConfigNodeValueData& data)
-	{
-		s << data.value;
-		return s;
-	}
+    std::string	value;
+    friend std::ostream& operator<<(std::ostream& s, const ConfigNodeValueData& data)
+    {
+        s << data.value;
+        return s;
+    }
 };
 
 typedef std::shared_ptr<ConfigNodeTagData> ConfigNodeTag;
@@ -57,158 +57,162 @@ typedef std::shared_ptr<ConfigNodeValueData> ConfigNodeValue;
 
 class ConfigNodeBase
 {
-	public:
-		ConfigNodeBase();
-		/**
-		 * Reading XML or JSON file into our config structure.
-		 * @param filename path to the file.
-		 * @return true, if file was read successfully; false, otherwise.
-		 */
-		virtual	bool load(const std::string& filename)=0;
-		/**
-		 * Recursively prints data to sstream.
-		 * @param target output stream.
-		 * @param indent current indentation level.
-		 */
-		void dump(std::stringstream& target, uint32_t indent = 0) const;
+public:
+    ConfigNodeBase();
+    ~ConfigNodeBase();
+    /**
+     * Reading XML or JSON file into our config structure.
+     * @param filename path to the file.
+     * @return true, if file was read successfully; false, otherwise.
+     */
+    virtual	bool load(const std::string& filename)=0;
+    /**
+     * Recursively prints data to sstream.
+     * @param target output stream.
+     * @param indent current indentation level.
+     */
+    void dump(std::stringstream& target, uint32_t indent = 0) const;
 
-		/**
-		 * Converts structure to human-readable form.
-		 * @return string representing the structure.
-		 */
-		std::string toString() const;
+    /**
+     * Converts structure to human-readable form.
+     * @return string representing the structure.
+     */
+    std::string toString() const;
 
-		/**
-		 * Returns (a reference to) the map of children nodes.
-		 * @return shared_ptr to std::multimap with nodes.
-		 */
-		ConfigNodeMap getChildren();
+    /**
+     * Returns (a reference to) the map of children nodes.
+     * @return shared_ptr to std::multimap with nodes.
+     */
+    ConfigNodeMap getChildren();
 
-		/**		 * Looks for the node with request parameters in the node's children list.
-		 * If there are several nodes with matching params, the 1st one is returned.
-		 *
-		 * @param node node name.
-		 * @param attr attribute name (not checked if empty).
-		 * @param value attribute value (not checked if empty or attr is empty).
-		 * @return ConfigNode of node with matching params, or ConfigNode(nullptr).
-		 */
-		ConfigNode findChildNode(const std::string& node,
-				const std::string& attr = "", const std::string& value = "") const;
-		/**
-		 * Lookup request function. Searches in the existing node tree and
-		 * return the resulting node.
-		 *
-		 * Request should be formatted like:
-		 *  "nodeA.nodeB#name:target.nodeC#attrX:attrValue"
-		 *
-		 * This request will lookup from the current node to the nodeC.
-		 * It assumes that tree looks like this:
-		 *  <CurrentNode>
-		 *      <nodeA>
-		 *          <nodeB name="target">
-		 *              <nodeC attrX="attrValue"/>
-		 *          </nodeB>
-		 *          <nodeB name="one more node"/>
-		 *      </nodeA>
-		 *  </CurrentNode>
-		 *
-		 * Return value will either contain ConfigNode of the node matching
-		 * searching sequence or ConfigNode(nullptr).
-		 *
-		 * @param path node name path.
-		 * @return first matching node or ConfigNode(nullptr).
-		 */
-		ConfigNode findNode(const std::string& path) const;
+    /**		 * Looks for the node with request parameters in the node's children list.
+     * If there are several nodes with matching params, the 1st one is returned.
+     *
+     * @param node node name.
+     * @param attr attribute name (not checked if empty).
+     * @param value attribute value (not checked if empty or attr is empty).
+     * @return ConfigNode of node with matching params, or ConfigNode(nullptr).
+     */
+    ConfigNode findChildNode(const std::string& node,
+                             const std::string& attr = "", const std::string& value = "") const;
+    /**
+     * Lookup request function. Searches in the existing node tree and
+     * return the resulting node.
+     *
+     * Request should be formatted like:
+     *  "nodeA.nodeB#name:target.nodeC#attrX:attrValue"
+     *
+     * This request will lookup from the current node to the nodeC.
+     * It assumes that tree looks like this:
+     *  <CurrentNode>
+     *      <nodeA>
+     *          <nodeB name="target">
+     *              <nodeC attrX="attrValue"/>
+     *          </nodeB>
+     *          <nodeB name="one more node"/>
+     *      </nodeA>
+     *  </CurrentNode>
+     *
+     * Return value will either contain ConfigNode of the node matching
+     * searching sequence or ConfigNode(nullptr).
+     *
+     * @param path node name path.
+     * @return first matching node or ConfigNode(nullptr).
+     */
+    ConfigNode findNode(const std::string& path) const;
 
-		/**
-		 * Checks whether node matching given path exists or not.
-		 * Searches nodes hierarchy if complex path is supplied.
-		 * @param path node name path.
-		 * @return true, if attribute exists; false, otherwise.
-		 */
-		bool hasNode(const std::string& path) const;
+    /**
+     * Checks whether node matching given path exists or not.
+     * Searches nodes hierarchy if complex path is supplied.
+     * @param path node name path.
+     * @return true, if attribute exists; false, otherwise.
+     */
+    bool hasNode(const std::string& path) const;
 
-		/**
-		 * Node object getter.
-		 * Searches nodes hierarchy if complex path is supplied.
-		 * Throws exception if node does not exist.
-		 * @param path node name path.
-		 * @return ConfigNode holding matching object.
-		 */
-		ConfigNode getNode(const std::string& path) const;
+    /**
+     * Node object getter.
+     * Searches nodes hierarchy if complex path is supplied.
+     * Throws exception if node does not exist.
+     * @param path node name path.
+     * @return ConfigNode holding matching object.
+     */
+    ConfigNode getNode(const std::string& path) const;
 
-		/**
-		 * Return attribute value or default value (if attribute does not exist).
-		 * Searches nodes hierarchy if complex path is supplied.
-		 * @param path node/attribute search path.
-		 * @param def default value.
-		 * @return attribute value or default value.
-		 * "parent.child#attr1:val.superchild"
-		*/
-		template <typename Y>
-		Y getAttr(const std::string& path, Y def) const
-		{
-			static ConfigNode	stepPointer		=	top;
-			static unsigned int 	deep_counter	=	0;
-			if(deep_counter == 0)
-				stepPointer = top;
-			Y				targetAttr = def;
-			
-			std::string tagName;
-			std::vector<strPair> attributes;
-			bool end	=	parsePath(path, tagName, attributes, deep_counter);
-			
-			itrPair ret;
-			ret = (stepPointer->children)->equal_range(stepPointer);																//get node children
-			
-			for(std::multimap<ConfigNode, ConfigNode>::iterator it = ret.first; it != ret.second; ++it)
-			{	
-				if(compareNodes(it->second, tagName, attributes))
-					if(end)
-					{
-						ConfigNodeTag	tagPointer((ConfigNodeTagData*)(it->second).get());
-						if(tagPointer->attribs.size())
-						{
-							Y attr	=	(Y)((*tagPointer->attribs.begin()).second);
-							return  attr;
-						}
-					}
-				
-				stepPointer = it->second;
-				deep_counter++;
-				targetAttr = getAttr(path, def);
-				deep_counter--;
-				stepPointer = (it->second)->parent;
-			}
-			
-			return targetAttr;
-		}
+    /**
+     * Return attribute value or default value (if attribute does not exist).
+     * Searches nodes hierarchy if complex path is supplied.
+     * @param path node/attribute search path.
+     * @param def default value.
+     * @return attribute value or default value.
+     * "parent.child#attr1:val.superchild"
+    */
+    template <typename Y>
+    Y getAttr(const std::string& path, Y def) const
+    {
+        static ConfigNode	stepPointer		=	top;
+        static unsigned int 	deep_counter	=	0;
+        if(deep_counter == 0)
+            stepPointer = top;
+        Y				targetAttr = def;
 
-		/**
-		 * Return attribute value.
-		 * Searches nodes hierarchy if complex path is supplied.
-		 * Throws exception if attribute does not exist.
-		 * @param path node/attribute search path.
-		 * @return attribute value.
-		*/
-		template <typename Y>
-		Y getAttr(const std::string& path) const
-		{
-			Y attr 	=	getAttr<Y>(path, "");
-			if(attr != "")
-				return attr;
-			else
-				throw	std::runtime_error("Attribute not found");
-		}	
-		
-		bool operator==(const ConfigNodeBase& ex);
-	protected:
-		bool		parsePath(const std::string& path, std::string& tagName, std::vector<strPair>& attributes, int deep) const;
-		ConfigNode	setNode(ConfigNode parent, std::string val, bool tog);//set tag/value config nodes
-		bool		compareNodes(ConfigNode node,const std::string& name, const std::vector<strPair>& attr) const;
-		bool 		compareNodes(const ConfigNode nodeR,const ConfigNode nodeL) const;
-		
-		ConfigNode	top;
+        std::string tagName;
+        std::vector<strPair> attributes;
+        bool end	=	parsePath(path, tagName, attributes, deep_counter);
+
+        itrPair ret;
+        ret = (stepPointer->children).equal_range(stepPointer);																//get node children
+
+        for(std::multimap<ConfigNode, ConfigNode>::iterator it = ret.first; it != ret.second; ++it)
+        {
+            if(compareNodes(it->second, tagName, attributes))
+            {
+                if(end)
+                {
+                    ConfigNodeTag	tagPointer((ConfigNodeTagData*)(it->second).get());
+                    if(tagPointer->attribs.size())
+                    {
+                        Y attr	=	(Y)((*tagPointer->attribs.begin()).second);
+                        return attr;
+                    }
+                }
+
+                stepPointer = it->second;
+                deep_counter++;
+                targetAttr = getAttr(path, def);
+                deep_counter--;
+                stepPointer = (it->second)->parent;
+            }
+        }
+
+        return targetAttr;
+    }
+
+    /**
+     * Return attribute value.
+     * Searches nodes hierarchy if complex path is supplied.
+     * Throws exception if attribute does not exist.
+     * @param path node/attribute search path.
+     * @return attribute value.
+    */
+    template <typename Y>
+    Y getAttr(const std::string& path) const
+    {
+        Y attr 	=	getAttr<Y>(path, "");
+        if(attr != "")
+            return attr;
+        else
+            throw	std::runtime_error("Attribute not found");
+    }
+
+    bool operator==(const ConfigNodeBase& ex);
+protected:
+    bool		parsePath(const std::string& path, std::string& tagName, std::vector<strPair>& attributes, int deep) const;
+    ConfigNodeTag	setTag(ConfigNode parent, std::string val);//set tag/value config nodes
+    ConfigNodeValue	setValue(ConfigNode parent, std::string val);
+    bool		compareNodes(ConfigNode node,const std::string& name, const std::vector<strPair>& attr) const;
+    bool 		compareNodes(const ConfigNode nodeR,const ConfigNode nodeL) const;
+
+    ConfigNode	top;
 };
 #endif /*CONFIGBASE_H_*/
 

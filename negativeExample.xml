@@ -5,13 +5,10 @@
 		</city>
 	</address>
 	<contents>
-		<ArrayItem productID="34" productName="Супер товар" quantity="1"/>
+		<ArrayItem productID="56" productName="Супер товар" quantity="1"/>
 		<ArrayItem productID="56" productName="Чудо товар" quantity="3"/>
 	</contents>
 	<firstName>
       Иван
 	</firstName>
-	<lastName>
-        Иванов
-	</lastName>
 </parent>
